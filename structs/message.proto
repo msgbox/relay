@@ -1,0 +1,9 @@
+package structs;
+
+message Message {
+  optional string creator = 1;
+  optional string receiver = 2;
+  optional int64 created_at = 3;
+  optional string id = 4;
+  optional string payload = 5;
+}
