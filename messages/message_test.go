@@ -1,4 +1,4 @@
-package outgoing_message
+package messages
 
 import (
 	"code.google.com/p/goprotobuf/proto"
@@ -64,5 +64,19 @@ func Test_Send_1(t *testing.T) {
 	err := Send(data, conn)
 	if err != nil {
 		t.Errorf("Send did not work as expected: %s", err)
+	}
+}
+
+// Test the message is sent to an AMQP Exchange
+func Test_Receive_1(t *testing.T) {
+	conn := createConnection()
+	defer conn.Close()
+
+	data := make_json()
+	msg, _ := createProtocolBuffer(data)
+
+	err := Receive(msg, conn)
+	if err != nil {
+		t.Errorf("Receive did not work as expected: %s", err)
 	}
 }

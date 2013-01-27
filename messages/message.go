@@ -1,4 +1,4 @@
-package outgoing_message
+package messages
 
 import (
 	"code.google.com/p/goprotobuf/proto"
@@ -54,6 +54,17 @@ func Send(data []byte, connection *amqp.Connection) error {
 	p_err := queue.Publish("outgoing", pb, connection)
 	if p_err != nil {
 		return fmt.Errorf("Publishing Error: %s", p_err)
+	}
+
+	return nil
+}
+
+// This should take an incoming message in Protocol Buffer
+// format and push it to an AMQP exchange
+func Receive(data []byte, connection *amqp.Connection) error {
+	err := queue.Publish("incoming", data, connection)
+	if err != nil {
+		return fmt.Errorf("Publishing Error: %s", err)
 	}
 
 	return nil
