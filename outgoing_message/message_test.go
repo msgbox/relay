@@ -3,9 +3,22 @@ package outgoing_message
 import (
 	"code.google.com/p/goprotobuf/proto"
 	"encoding/json"
+	"fmt"
+	"github.com/msgbox/relay/queue"
 	"github.com/msgbox/relay/structs"
+	"github.com/streadway/amqp"
 	"testing"
 )
+
+// Helper for creating an AMQP Connection
+func createConnection() *amqp.Connection {
+	conn, err := queue.Connect()
+	if err != nil {
+		fmt.Errorf("Error Connecting: %s", err)
+	}
+
+	return conn
+}
 
 // Helper for creating fake JSON data
 // to use in the tests
@@ -33,7 +46,7 @@ func Test_Encrypt_1(t *testing.T) {
 // Ensure Protocol Buffers are Marshaled correctly
 func Test_createPB_1(t *testing.T) {
 	data := make_json()
-	msg := createProtocolBuffer(data)
+	msg, _ := createProtocolBuffer(data)
 	newTest := &structs.Message{}
 	proto.Unmarshal(msg, newTest)
 	if newTest.GetCreator() != "sender@example.com" {
@@ -41,5 +54,15 @@ func Test_createPB_1(t *testing.T) {
 	}
 }
 
-// TO-DO
 // Test the message is sent to an AMQP Exchange
+func Test_Send_1(t *testing.T) {
+	conn := createConnection()
+	defer conn.Close()
+
+	data := make_json()
+
+	err := Send(data, conn)
+	if err != nil {
+		t.Errorf("Send did not work as expected: %s", err)
+	}
+}
