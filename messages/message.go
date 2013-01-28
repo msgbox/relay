@@ -2,6 +2,8 @@ package messages
 
 import (
 	"code.google.com/p/goprotobuf/proto"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/msgbox/relay/queue"
@@ -29,6 +31,18 @@ type Header struct {
 type Payload struct {
 	Title string
 	Body  string
+}
+
+// Generate a UUID to use as a unique Message ID
+// Need to work on the UUID library to ensure UUID's
+// are created correctly
+func (m *Item) generateUUID() string {
+	uuid, err := genUUID()
+	if err != nil {
+		fmt.Errorf("Error Generating UUID: %s", err)
+	}
+
+	return *&uuid
 }
 
 // Eventually this will encrypt the payload
@@ -91,6 +105,7 @@ func createProtocolBuffer(data []byte) ([]byte, error) {
 		Receiver:  proto.String(*&i.Header.Receiver),
 		CreatedAt: proto.Int64(*&i.Header.Created_At),
 		Id:        proto.String(*&i.Header.MessageID),
+		Id:        proto.String(i.generateUUID()),
 		Payload:   proto.String(i.encrypt()),
 	}
 
@@ -100,4 +115,19 @@ func createProtocolBuffer(data []byte) ([]byte, error) {
 	}
 
 	return p, nil
+}
+
+// UUID v4 Generator
+// http://www.ashishbanerjee.com/home/go/go-generate-uuid
+func genUUID() (string, error) {
+	uuid := make([]byte, 16)
+	n, err := rand.Read(uuid)
+	if n != len(uuid) || err != nil {
+		return "", err
+	}
+	// TODO: verify the two lines implement RFC 4122 correctly
+	uuid[8] = 0x80 // variant bits see page 5
+	uuid[4] = 0x40 // version 4 Pseudo Random, see page 7
+
+	return hex.EncodeToString(uuid), nil
 }
