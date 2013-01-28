@@ -45,7 +45,7 @@ func handleOutgoing(deliveries <-chan amqp.Delivery, done chan error) {
 		// For now just print them
 		// TODO: Send them to the receiver via a socket connection
 		log.Printf(
-			"Sending Message:\n ID: %i \n To: %t \n From: %f \n At: %t \n",
+			"Sending Message:\n ID: %s \n To: %s \n From: %s \n Created At: %d \n",
 			msg.GetId(),
 			msg.GetReceiver(),
 			msg.GetCreator(),

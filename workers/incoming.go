@@ -45,7 +45,7 @@ func handleIncoming(deliveries <-chan amqp.Delivery, done chan error) {
 		// For now just print them
 		// TO-DO: Write items to a database or storage
 		log.Printf(
-			"Receiving Message:\n ID: %i \n To: %t \n From: %f \n Created At: %t \n",
+			"Receiving Message:\n ID: %s \n To: %s \n From: %s \n Created At: %d \n",
 			msg.GetId(),
 			msg.GetReceiver(),
 			msg.GetCreator(),
