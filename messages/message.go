@@ -9,6 +9,7 @@ import (
 	"github.com/msgbox/relay/queue"
 	"github.com/msgbox/relay/structs"
 	"github.com/streadway/amqp"
+	"time"
 )
 
 // Interface for encryptors
@@ -31,6 +32,11 @@ type Header struct {
 type Payload struct {
 	Title string
 	Body  string
+}
+
+func (m *Item) setCreatedAt() int64 {
+	t := time.Now().UTC().Unix()
+	return *&t
 }
 
 // Generate a UUID to use as a unique Message ID
@@ -103,8 +109,7 @@ func createProtocolBuffer(data []byte) ([]byte, error) {
 	msg := &structs.Message{
 		Creator:   proto.String(*&i.Header.Creator),
 		Receiver:  proto.String(*&i.Header.Receiver),
-		CreatedAt: proto.Int64(*&i.Header.Created_At),
-		Id:        proto.String(*&i.Header.MessageID),
+		CreatedAt: proto.Int64(i.setCreatedAt()),
 		Id:        proto.String(i.generateUUID()),
 		Payload:   proto.String(i.encrypt()),
 	}
