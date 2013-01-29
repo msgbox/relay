@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/msgbox/relay/messages"
 	"github.com/msgbox/relay/queue"
+	"github.com/msgbox/relay/storage"
 	"github.com/streadway/amqp"
-	"log"
 )
 
 // An Incoming Worker should listen for new items on the incoming
@@ -42,15 +42,28 @@ func handleIncoming(deliveries <-chan amqp.Delivery, done chan error) {
 	for d := range deliveries {
 		msg := messages.Parse(d.Body)
 
-		// For now just print them
-		// TO-DO: Write items to a database or storage
-		log.Printf(
-			"Receiving Message:\n ID: %s \n To: %s \n From: %s \n Created At: %d \n",
-			msg.GetId(),
-			msg.GetReceiver(),
-			msg.GetCreator(),
-			msg.GetCreatedAt(),
-		)
+		// Get Name and Box
+		m_name := messages.ParseName(msg.GetReceiver())
+		m_box := messages.ParseBox(msg.GetReceiver())
+
+		// Lookup Name and Box in data store to ensure they exist
+		account := storage.FindAccount(m_name)
+		if account == nil {
+			// Handle non-existing account
+			fmt.Println("Account does not exist")
+		}
+
+		box := storage.FindBox(*&account.Id, m_box)
+		if box == nil {
+			// Handle non-existing account
+			fmt.Println("Account does not have a box with that name")
+		}
+
+		// Insert Message into Database
+		err := storage.InsertMessage(account.Id, box.Id, *&msg)
+		if err != nil {
+			fmt.Printf("Error saving Message: %s", err)
+		}
 
 		d.Ack(true)
 	}
