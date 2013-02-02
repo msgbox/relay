@@ -1,72 +1,54 @@
-// Incoming Relay Handler
+// Outgoing Relay Handler
 //
-// Handles an incoming message from another relay.
-// It simply accepts the message and writes it into a queue
-// for further processing.
+// Handles an outgoing message.
+// It serves as a relay that a worker can dial and have the
+// relay handle delivering the message.
 
 package handler
 
 import (
-	"bufio"
-	"log"
+	"fmt"
+	"io/ioutil"
 	"net"
 )
 
-type Outgoing struct {
-	Sess *Session
-}
-
 // Read from the Session buffer and send to a handler function
-func (out *Outgoing) Read() {
-	defer out.Sess.rwc.Close()
+func ReadOutgoing(conn net.Conn) {
+	// close connection on exit
+	defer conn.Close()
 
-	for {
-		line, err := readln(out.Sess.br)
-		if err != nil {
-			log.Printf("Read error: %v", err)
-			return
-		}
+	result, err := ioutil.ReadAll(conn)
+	checkError(err)
 
-		out.handleMessage(sl)
-	}
+	err = sendMessage(result)
+	checkError(err)
 }
 
-func readln(r *bufio.Reader) ([]byte, error) {
-	var (
-		isPrefix bool  = true
-		err      error = nil
-		line, ln []byte
-	)
-
-	for isPrefix && err == nil {
-		line, isPrefix, err = r.ReadLine()
-		ln = append(ln, line...)
-	}
-
-	return ln, err
-}
-
-// Connect to an AMQP Exchange and write the message
-func (out *Outgoing) handleMessage(body []byte) {
-
-	// Find Receiving Node
+func sendMessage(result []byte) error {
+	// Lookup Receiving Node
 	node := "127.0.0.1:7834"
 
-	// Dial Net Connection
-	conn, err := net.Dial("tcp", node)
+	tcpAddr, err := net.ResolveTCPAddr("tcp4", node)
 	if err != nil {
-		// Handle error
+		return err
+	}
+
+	conn, err := net.DialTCP("tcp", nil, tcpAddr)
+	if err != nil {
+		return err
 	}
 	defer conn.Close()
 
-	// Transfer Payload
-	status, err := conn.Write(body)
+	_, err = conn.Write(result)
 	if err != nil {
-		// Handle Error
+		return err
 	}
 
-	if status < 0 {
-		// Figure out what status is returning
-	}
+	return nil
+}
 
+func checkError(err error) {
+	if err != nil {
+		fmt.Printf("Fatal error: %s", err.Error())
+	}
 }
