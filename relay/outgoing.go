@@ -8,8 +8,10 @@ package handler
 
 import (
 	"fmt"
+	"github.com/msgbox/message"
 	"io/ioutil"
 	"net"
+	"strings"
 )
 
 // Read from the Session buffer and send to a handler function
@@ -26,14 +28,9 @@ func ReadOutgoing(conn net.Conn) {
 
 func sendMessage(result []byte) error {
 	// Lookup Receiving Node
-	node := "127.0.0.1:7834"
+	node := lookupAddress(result)
 
-	tcpAddr, err := net.ResolveTCPAddr("tcp4", node)
-	if err != nil {
-		return err
-	}
-
-	conn, err := net.DialTCP("tcp", nil, tcpAddr)
+	conn, err := net.DialTCP("tcp", nil, node)
 	if err != nil {
 		return err
 	}
@@ -45,6 +42,17 @@ func sendMessage(result []byte) error {
 	}
 
 	return nil
+}
+
+// Get it working with with IP addresses for now
+func lookupAddress(data []byte) *net.TCPAddr {
+	port := ":7834" // Hardcoded for now
+	msg := messages.Parse(data)
+	receiver := msg.GetReceiver()
+	addr := strings.Split(receiver, "@")
+	tcpAddr, err := net.ResolveTCPAddr("tcp4", addr[1]+port)
+	checkError(err)
+	return tcpAddr
 }
 
 func checkError(err error) {
